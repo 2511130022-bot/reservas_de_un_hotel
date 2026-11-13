@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>HotelAdmin | Gestión hotelera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Librería de Supabase guardada localmente (funciona sin depender del CDN) -->
+<script src="supabase.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="bg-decor" aria-hidden="true"></div>
+
+<!-- ===== Dock lateral flotante (navegación) ===== -->
+<nav class="dock" id="dock" aria-label="Navegación principal">
+  <div class="dock-brand" title="HotelAdmin">H</div>
+  <button class="dock-btn active" data-page="dashboard" data-label="Panel principal" aria-label="Panel principal"><span data-icon="home"></span></button>
+  <button class="dock-btn" data-page="tipo_de_habitacion" data-label="Tipos de habitación" aria-label="Tipos de habitación"><span data-icon="tag"></span></button>
+  <button class="dock-btn" data-page="habitacion" data-label="Habitaciones" aria-label="Habitaciones"><span data-icon="box"></span></button>
+  <button class="dock-btn" data-page="huesped" data-label="Huéspedes" aria-label="Huéspedes"><span data-icon="user"></span></button>
+  <button class="dock-btn" data-page="empleado" data-label="Empleados" aria-label="Empleados"><span data-icon="briefcase"></span></button>
+  <button class="dock-btn" data-page="reserva" data-label="Reservas" aria-label="Reservas"><span data-icon="calendar"></span></button>
+</nav>
+
+<main class="content">
+
+  <!-- ===== Barra superior ===== -->
+  <header class="topbar">
+    <div class="greet card">
+      <div class="greet-txt">
+        <h1 id="greetTitle">Buenas tardes</h1>
+        <p class="muted" id="greetDate">—</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="conn-chip" id="connChip"><span class="dot"></span><span id="connText">Conectando…</span></span>
+      <button class="icon-btn" id="themeToggle" data-label="Cambiar tema" aria-label="Cambiar tema"><span data-icon="moon"></span></button>
+      <button class="icon-btn" id="refreshBtn" data-label="Actualizar datos" aria-label="Actualizar datos"><span data-icon="refresh"></span></button>
+    </div>
+  </header>
+
+  <!-- ===== PANEL PRINCIPAL ===== -->
+  <section id="dashboardPage">
+    <div class="hero">
+      <div class="card clock-card">
+        <div class="clock"><span id="clockTime">--:--</span><span class="mer" id="clockMer">--</span></div>
+        <div class="muted" id="clockDate">—</div>
+      </div>
+      <div class="card weather-card" id="weatherCard" hidden>
+        <div class="w-emoji" id="wEmoji">🌤️</div>
+        <div class="w-data">
+          <div class="w-temp"><span id="wTemp">--</span><small>°C</small></div>
+          <div class="muted" id="wDesc">—</div>
+          <div class="muted w-loc">Lima, Perú</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="card stat"><div class="stat-icon i-blue" data-icon="tag"></div><div><strong id="statTipos">—</strong><small>Tipos de habitación</small></div></div>
+      <div class="card stat"><div class="stat-icon i-violet" data-icon="box"></div><div><strong id="statHabitaciones">—</strong><small>Habitaciones</small></div></div>
+      <div class="card stat"><div class="stat-icon i-teal" data-icon="user"></div><div><strong id="statHuespedes">—</strong><small>Huéspedes</small></div></div>
+      <div class="card stat"><div class="stat-icon i-amber" data-icon="calendar"></div><div><strong id="statReservas">—</strong><small>Reservas</small></div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card panel">
+        <div class="panel-head">
+          <h2>Próximas llegadas</h2>
+          <button class="btn ghost small link-btn" data-page="reserva">Ver reservas</button>
+        </div>
+        <div class="list" id="upcomingList"><div class="muted pad">Cargando…</div></div>
+      </div>
+      <div class="card panel">
+        <div class="panel-head"><h2>Ocupación por tipo</h2></div>
+        <div class="occ-list" id="occupancy"><div class="muted pad">Cargando…</div></div>
+      </div>
+    </div>
+
+    <div class="card panel">
+      <div class="panel-head"><h2>Acceso rápido</h2></div>
+      <div class="quick-grid">
+        <button class="quick-tile" data-quick="reserva"><span class="q-icon i-blue" data-icon="calendar"></span><span>Reserva</span></button>
+        <button class="quick-tile" data-quick="huesped"><span class="q-icon i-teal" data-icon="user"></span><span>Huésped</span></button>
+        <button class="quick-tile" data-quick="habitacion"><span class="q-icon i-violet" data-icon="box"></span><span>Habitación</span></button>
+        <button class="quick-tile" data-quick="empleado"><span class="q-icon i-amber" data-icon="briefcase"></span><span>Empleado</span></button>
+      </div>
+    </div>
+
+    <p class="foot-note">
+      Modo sin login: cualquier persona con acceso a esta página podría consultar o modificar los datos según las políticas de Supabase.
+      No registres datos reales de huéspedes ni DNI en esta modalidad.
+    </p>
+  </section>
+
+  <!-- ===== PÁGINA DE REGISTROS (CRUD) ===== -->
+  <section id="recordsPage" class="hidden">
+    <div class="card panel panel-flush">
+      <div class="panel-head">
+        <div>
+          <h2 id="tableTitle">Registros</h2>
+          <span class="chip count" id="recordCount">Cargando…</span>
+        </div>
+        <div class="toolbar">
+          <div class="search-pill">
+            <span class="sp-icon" data-icon="search"></span>
+            <input id="searchInput" type="search" placeholder="Buscar…" autocomplete="off">
+            <kbd>Ctrl K</kbd>
+          </div>
+          <button class="btn ghost" id="exportBtn" data-label="Exportar CSV" aria-label="Exportar CSV" title="Exportar CSV"><span data-icon="download"></span></button>
+          <button class="btn primary" id="newButton"><span data-icon="plus"></span> Nuevo</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody">
+            <tr><td class="empty">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">HotelAdmin · CRUD sobre Supabase</footer>
+</main>
+
+<!-- ===== Modal de formulario ===== -->
+<div id="modalBackdrop" class="overlay hidden">
+  <div class="modal card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button class="icon-btn modal-x" id="modalClose" aria-label="Cerrar"><span data-icon="x"></span></button>
+    <h2 id="modalTitle">Nuevo registro</h2>
+    <p class="muted" id="modalSubtitle">Completa los campos.</p>
+    <form id="recordForm">
+      <div class="form-grid" id="formFields"></div>
+      <div class="error" id="formError"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" id="cancelButton">Cancelar</button>
+        <button class="btn primary" id="saveButton" type="submit"><span data-icon="check"></span> Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== Modal de confirmación (eliminar) ===== -->
+<div id="confirmBackdrop" class="overlay hidden">
+  <div class="modal card confirm" role="alertdialog" aria-modal="true">
+    <div class="confirm-icon" data-icon="alert"></div>
+    <h3 id="confirmTitle">¿Eliminar registro?</h3>
+    <p class="muted" id="confirmMessage">Esta acción no se puede deshacer.</p>
+    <div class="modal-actions center">
+      <button class="btn ghost" id="confirmCancel">Cancelar</button>
+      <button class="btn danger" id="confirmOk">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Toast ===== -->
+<div id="toast" class="toast hidden"><span class="t-icon" id="toastIcon"></span><span id="toastMsg"></span></div>
+
+<script src="app.js" defer></script>
+</body>
+</html>
